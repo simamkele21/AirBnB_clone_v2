@@ -1,5 +1,6 @@
 -- prepares MySQL server for the project
 -- creates a database, new user, user's password, grants the new user privileges
+-- grants user SELECT privileges on database perormance_schema
 
 CREATE DATABASE IF NOT EXISTS hbnb_dev_db;
 
