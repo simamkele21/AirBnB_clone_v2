@@ -13,11 +13,15 @@ class FileStorage:
     def all(self, cls=None):
         """Returns a dictionary of __object"""
         obj_dict = {}
-        if cls:
+        if cls:  # checks if class was passed in argument
             dictionary = self.__objects
             for key in dictionary:
                 splitted = key.replace('.', ' ')
+                # creates a list with class name as 1st element and
+                # object id as 2nd
                 splitted = shlex.split(splitted)
+                # adds object to obj_dict if 1st element
+                # matches specified class
                 if (splitted[0] == cls.__name__):
                     obj_dict[key] = self.__objects[key]
             return obj_dict
