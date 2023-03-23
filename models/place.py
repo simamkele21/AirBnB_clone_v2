@@ -1,41 +1,39 @@
 #!/usr/bin/python3
-""" Place Module for HBNB project """
-from models.base_model import BaseModel, Base
-from sqlalchemy import Column, String, ForeignKey, Integer, Float, Table
-from os import getenv
-from sqlalchemy.orm import relationship
+"""This is the place class"""
 
-if storage_type == 'db':
-    place_amenity = Table('place_amenity', Base.metadata,
-                          Column('place_id', String(60),
-                                 ForeignKey('places.id'),
-                                 primary_key=True,
-                                 nullable=False),
-                          Column('amenity_id', String(60),
-                                 ForeignKey('amenities.id'),
-                                 primary_key=True,
-                                 nullable=False)
-                          )
+from models.base_model import BaseModel, Base
+import sqlalchemy
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import DateTime, Table, MetaData, Float
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
+import os
 
 
 class Place(BaseModel, Base):
-    """ A place to stay """
-    __tablename__ = 'places'
-    if storage_type == 'db':
+    """Place class handles all application places"""
+
+    if os.getenv('HBNB_TYPE_STORAGE', 'fs') == 'db':
+        metadata = Base.metadata
+        __tablename__ = 'places'
         city_id = Column(String(60), ForeignKey('cities.id'), nullable=False)
         user_id = Column(String(60), ForeignKey('users.id'), nullable=False)
         name = Column(String(128), nullable=False)
-        description = Column(String(1024), nullable=True)
-        number_rooms = Column(Integer, nullable=False, default=0)
-        number_bathrooms = Column(Integer, nullable=False, default=0)
-        max_guest = Column(Integer, nullable=False, default=0)
-        price_by_night = Column(Integer, nullable=False, default=0)
-        latitude = Column(Float, nullable=True)
-        longitude = Column(Float, nullable=True)
-        reviews = relationship('Review', backref='place',
-                               cascade='all, delete, delete-orphan')
-        amenities = relationship('Amenity', secondary=place_amenity,
-                                 viewonly=False, backref='place_amenities')
+        description = Column(String(1024))
+        number_rooms = Column(Integer, default=0, nullable=False)
+        number_bathrooms = Column(Integer, default=0, nullable=False)
+        max_guest = Column(Integer, default=0, nullable=False)
+        price_by_night = Column(Integer, default=0, nullable=False)
+        latitude = Column(Float)
+        longitude = Column(Float)
+        amenity_ids = ['', '']
+        amenities = relationship('Amenity',
+                                 secondary='place_amenity',
+                                 back_populates="places",
+                                 viewonly=False)
+        reviews = relationship('Review',
+                               cascade="all, delete", backref='place')
     else:
         city_id = ""
         user_id = ""
@@ -49,66 +47,19 @@ class Place(BaseModel, Base):
         longitude = 0.0
         amenity_ids = []
 
-        @property
-        def reviews(self):
-            ''' returns list of review instances with place_id
-                equals to the cyrrent Place.id
-                FileStorage relationship between Place and Review
-            '''
-            from models import storage
-            all_revs = storage.all(Review)
-            lst = []
-            for rev in all_revs.values():
-                if rev.place_id == self.id:
-                    lst.append(rev)
-            return lst
+    def __init__(self, *args, **kwargs):
+        """instantiates a new place"""
+        super().__init__(self, *args, **kwargs)
 
-        @property
-        def amenities(self):
-            ''' returns the list of Amenity instances
-                based on the attribute amenity_ids that
-                contains all Amenity.id linked to the Place
-            '''
-            from models import storage
-            all_amens = storage.all(Amenity)
-            lst = []
-            for amen in all_amens.values():
-                if amen.id in self.amenity_ids:
-                    lst.append(amen)
-            return lst
 
-        @amenities.setter
-        def amenities(self, obj):
-            ''' method for adding an Amenity.id to the
-                attribute amenity_ids. accepts only Amenity
-                objects
-            '''
-            if obj is not None:
-                if isinstance(obj, Amenity):
-                    if obj.id not in self.amenity_ids:
-                        self.amenity_ids.append(obj.id)
-        reviews = relationship("Review", backref="place")
-        amenities = relationship("Amenity", secondary=place_amenity,
-                                 viewonly=False)
-    else:
-        @property
-        def reviews(self):
-            review_instances = []
-            for review in self.reviews:
-                if review.place_id == self.id:
-                    review_instances.append(review)
-            return review_instances
+class PlaceAmenity(Base):
+    """ place amenity """
 
-        @property
-        def amenities(self):
-            amenity_instances = []
-            for amenity in models.storage.all(models.amenity.Amenity).values():
-                if amenity.id in self.amenity_ids:
-                    amenity_instances.append(amenity)
-            return amenity_instances
-
-        @amenities.setter
-        def amenities(self, amenity_object):
-            if amenity_object.__class__.__name__ == "Amenity":
-                self.amenity_ids.append(amenity_object.id)
-                
+    if os.getenv('HBNB_TYPE_STORAGE') == 'db':
+        metadata = Base.metadata
+        __tablename__ = "place_amenity"
+        place_id = Column(String(60), ForeignKey('places.id'),
+                          primary_key=True, nullable=False)
+        amenity_id = Column('amenity_id', String(60),
+                            ForeignKey('amenities.id'),
+                            primary_key=True, nullable=False)
