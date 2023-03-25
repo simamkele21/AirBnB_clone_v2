@@ -35,7 +35,7 @@ class FileStorage:
             new_obj = {}
             for c, v in FileStorage.__objects.items():
                 b = c.split('.')
-                if b[0] == cls:
+                if b[0] == cls.__name__:
                     new_obj[c] = v
             return new_obj
 
@@ -60,16 +60,18 @@ class FileStorage:
         try:
             with open(fname, mode='r', encoding='utf-8') as f_io:
                 new_objs = json.load(f_io)
-        except:
+        except Exception:
             return
         for o_id, d in new_objs.items():
             k_cls = d['__class__']
             FileStorage.__objects[o_id] = FileStorage.CNC[k_cls](**d)
 
     def delete(self, obj=None):
-        """ to delete obj from __objects if inside """
-        if obj in self.__objects:
-            del(obj)
+        """deletes obj from __objects if it exists"""
+        if obj is not None:
+            bm_id = "{}.{}".format(type(obj).__name__, obj.id)
+            if bm_id in FileStorage.__objects:
+                del FileStorage.__objects[bm_id]
 
     def close(self):
         """ calls reload method and closes session"""
