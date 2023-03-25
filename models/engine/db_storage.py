@@ -1,8 +1,3 @@
-#!/usr/bin/python3
-"""
-New engine DBStrorage, transition from FileStorage
-"""
-
 import os
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy import create_engine, MetaData
@@ -19,8 +14,10 @@ from models.engine.file_storage import FileStorage
 
 
 class DBStorage:
-    """docstring
-    """
+    """docstring"""
+
+    __engine = None
+    __session = None
 
     DNC = {
         'BaseModel': base_model.BaseModel,
@@ -31,8 +28,6 @@ class DBStorage:
         'State': state.State,
         'User': user.User
     }
-    __engine = None
-    __session = None
 
     def __init__(self):
         """drop all tables if the environment variable
@@ -40,12 +35,13 @@ class DBStorage:
 
         user = os.getenv('HBNB_MYSQL_USER')
         pwd = os.getenv('HBNB_MYSQL_PWD')
-        host = os.getenv('HBNB_MYSQL_HOST')
+        host = os.getenv('HBNB_MYSQL_HOST', 'localhost')
         db = os.getenv('HBNB_MYSQL_DB')
 
         self.__engine = create_engine(
-                        f'mysql+mysqldb://{user}:{pwd}@{host}/{db}',
-                        pool_pre_ping=True)
+            f'mysql+mysqldb://{user}:{pwd}@{host}/{db}',
+            pool_pre_ping=True
+        )
 
         if os.getenv('HBNB_ENV') == 'test':
             Base.metadata.drop_all(self.__engine)
@@ -74,8 +70,7 @@ class DBStorage:
         self.__session.add(obj)
 
     def save(self):
-        """commit all changes of the current database session (self.__session)
-        """
+        """commit all changes of the current database session"""
         self.__session.commit()
 
     def reload(self):
@@ -86,8 +81,10 @@ class DBStorage:
         from the engine (self.__engine)
         """
         Base.metadata.create_all(self.__engine)
-        session_factory = sessionmaker(bind=self.__engine,
-                                       expire_on_commit=False)
+        session_factory = sessionmaker(
+            bind=self.__engine,
+            expire_on_commit=False
+        )
         Session = scoped_session(session_factory)
         self.__session = Session()
 
