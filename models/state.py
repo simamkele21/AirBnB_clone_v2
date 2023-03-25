@@ -28,11 +28,10 @@ class State(BaseModel, Base):
 
     @property
     def cities(self):
-        """return list of cities"""
-        if os.getenv('HBNB_TYPE_STORAGE', '') != 'db':
-            all_cities = models.storage.all("City")
-            city_list = []
-            for cityid in all_cities:
-                if all_cities[cityid].state_id == self.id:
-                    city_list.append(all_cities[cityid])
-            return city_list
+        """
+        Getter attribute that returns the list of City instances
+        with state_id equals to the current State.id
+        """
+        from models import storage
+        city_objs = storage.all("City").values()
+        return [city for city in city_objs if city.state_id == self.id]
