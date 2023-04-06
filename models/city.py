@@ -1,20 +1,28 @@
 #!/usr/bin/python3
-""" City Module for HBNB project """
+
+"""This is the city class"""
+
 from models.base_model import BaseModel, Base
+import sqlalchemy
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Table
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
+import os
 
 
 class City(BaseModel, Base):
-    """
-    The city class
-    Attributes:
-        state_id: unique state identifier
-        name: name of the state
-    """
-    __tablename__ = "cities"
-    name = Column(String(128), nullable=False)
-    state_id = Column(String(60), ForeignKey('states.id'), nullable=False)
-    state = relationship("State", backref="cities",
-                         cascade="all, delete-orphan")
+    """City class handles all application cities"""
+
+    if os.getenv('HBNB_TYPE_STORAGE', 'fs') == 'db':
+        __tablename__ = 'cities'
+        name = Column(String(128), nullable=False)
+        state_id = Column(String(60), ForeignKey('states.id'), nullable=False)
+        places = relationship('Place', cascade="all, delete", backref="cities")
+    else:
+        name = ""
+        state_id = ""
+
+    def __init__(self, *args, **kwargs):
+        """instantiates a new city"""
+        super().__init__(self, *args, **kwargs)
