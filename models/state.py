@@ -1,13 +1,12 @@
 #!/usr/bin/python3
 """This is the state class"""
-
-from models.base_model import BaseModel, Base
-import sqlalchemy
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from models.base_model import BaseModel, Base
 from sqlalchemy.orm import relationship
-import os
+from sqlalchemy import Column, Integer, String
+import models
+from models.city import City
+import shlex
 
 
 class State(BaseModel, Base):
@@ -15,23 +14,22 @@ class State(BaseModel, Base):
     Attributes:
         name: input name
     """
-    if os.getenv('HBNB_TYPE_STORAGE', 'fs') == 'db':
-        __tablename__ = 'states'
-        name = Column(String(128), nullable=False)
-        cities = relationship('City', cascade="all, delete", backref='state')
-    else:
-        name = ""
-
-    def __init__(self, *args, **kwargs):
-        """instantiates a new state"""
-        super().__init__(self, *args, **kwargs)
+    __tablename__ = "states"
+    name = Column(String(128), nullable=False)
+    cities = relationship("City", cascade='all, delete, delete-orphan',
+                          backref="state")
 
     @property
     def cities(self):
-        """
-        Getter attribute that returns the list of City instances
-        with state_id equals to the current State.id
-        """
-        from models import storage
-        city_objs = storage.all("City").values()
-        return [city for city in city_objs if city.state_id == self.id]
+        var = models.storage.all()
+        lista = []
+        result = []
+        for key in var:
+            city = key.replace('.', ' ')
+            city = shlex.split(city)
+            if (city[0] == 'City'):
+                lista.append(var[key])
+        for elem in lista:
+            if (elem.state_id == self.id):
+                result.append(elem)
+        return (result)
